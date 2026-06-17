@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Rava</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: black; 
+            color: white; 
+            font-family: 'Courier New', Courier, monospace; 
+            overflow: hidden; 
+        }
+        
+        /* Instruksi Sentuh Layar */
+        #tap-instruksi {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            font-size: 1.2rem;
+            color: white;
+            background: rgba(255, 105, 180, 0.4);
+            padding: 15px 30px;
+            border-radius: 50px;
+            animation: pulse 1.5s infinite;
+            cursor: pointer;
+            border: 2px solid #ff69b4;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* 1. Matrix */
+        canvas { 
+            display: block; position: absolute; top: 0; left: 0; z-index: 1;
+        }
+        
+        /* 2. Teks Hitung Mundur */
+        #text-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 5rem; font-weight: bold; color: #ff69b4; 
+            text-shadow: 0 0 15px rgba(255, 105, 180, 0.8);
+            z-index: 2; opacity: 0; text-align: center;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Latar Hitam Bintang */
+        .fullscreen-bg {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: #050505; 
+            z-index: 3; overflow: hidden;
+        }
+
+        .star {
+            position: absolute; background-color: white; border-radius: 50%; z-index: -1;
+        }
+
+        /* 3. Section Foto Awal */
+        #photo-section { text-align: center; padding-top: 40px; }
+        .ucapan-kertas {
+            background: white; color: black; padding: 20px; border-radius: 10px;
+            font-family: 'Brush Script MT', 'Comic Sans MS', cursive;
+            font-size: 1.5rem; width: 80%; max-width: 400px; margin: 0 auto 30px auto;
+        }
+        .foto-container { display: flex; justify-content: center; gap: 10px; padding: 0 20px; }
+        .foto-container img {
+            width: 45%; max-width: 200px; border-radius: 10px; border: 2px solid white; object-fit: cover;
+        }
+
+        /* 4. Animasi Bentuk Love Melingkar */
+        #big-heart-section { display: none; z-index: 4; }
+        .heart-pic {
+            position: absolute; width: 40px; height: 40px;
+            border-radius: 8px; border: 2px solid #ff69b4; object-fit: cover;
+            box-shadow: 0 0 10px rgba(255,105,180,0.5);
+            /* Animasi pergerakan dari tengah menyebar ke bentuk love */
+            transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 5. Pesan Penutup Panjang */
+        #long-message-section {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 85%; max-width: 600px;
+            text-align: center; font-family: 'Georgia', serif; font-size: 1.2rem;
+            line-height: 1.8; color: white; z-index: 5; opacity: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            transition: opacity 2s ease-in-out; /* Efek memudar pelan */
+        }
+        .pink-text { color: #ff69b4; font-weight: bold; font-size: 1.4rem; }
+
+    </style>
+</head>
+<body>
+
+    <audio id="lagu" src="musik.mp3" loop></audio>
+
+    <div id="tap-instruksi">Sentuh Layar Untuk Memulai ✨</div>
+
+    <!-- Elemen Animasi -->
+    <canvas id="matrix"></canvas>
+    <div id="text-container"></div>
+
+    <div id="photo-section" class="fullscreen-bg">
+        <div class="ucapan-kertas">As long as you're smiling, I'm happy.</div>
+        <div class="foto-container">
+            <img src="foto1.jpg" alt="Foto 1">
+            <img src="foto2.jpg" alt="Foto 2">
+        </div>
+    </div>
+
+    <div id="big-heart-section" class="fullscreen-bg"></div>
+
+    <div id="long-message-section">
+        <p class="pink-text">Happy Birthday Sayang.</p>
+        <p>I just want you to know how much you truly mean to me.</p>
+        <p>Thank you for your patience, your kindness, and for always being there for me.</p>
+        <p>You make my days better just by being in them. I'm so grateful to have you in my life, and I can't wait to create more memories with you.</p>
+        <p class="pink-text" style="font-family: 'Brush Script MT', cursive; font-size: 2rem; margin-top: 30px;">love you, always</p>
+    </div>
+
+    <script>
+        // --- SISTEM TIMELINE (SUTRADARA) ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const sequence = ["3", "2", "1", "HAPPY", "BIRTHDAY", "TO", "RAVA", "❤️"];
+        let matrixInterval;
+        let isPlaying = false;
+
+        // Pancingan Audio (Wajib bagi browser)
+        document.body.addEventListener('click', () => {
+            if(!isPlaying) {
+                document.getElementById('lagu').play();
+                document.getElementById('tap-instruksi').style.display = 'none';
+                isPlaying = true;
+                jalankanSemuaAnimasi(); // Memulai loop animasi
+            }
+        });
+
+        // FUNGSI UTAMA LOOPING
+        async function jalankanSemuaAnimasi() {
+            while(true) { // LOOPING TANPA BATAS
+                
+                // 0. RESET SEMUA LAYAR KE AWAL
+                document.getElementById('matrix').style.display = 'block';
+                document.getElementById('text-container').style.display = 'block';
+                document.getElementById('photo-section').style.display = 'none';
+                document.getElementById('big-heart-section').style.display = 'none';
+                document.getElementById('long-message-section').style.display = 'none';
+                document.getElementById('long-message-section').style.opacity = '0';
+                
+                // 1. MATRIX MULAI
+                mulaiMatrix();
+                await sleep(2000); // Matrix hujan selama 2 detik
+
+                // 2. TEKS HITUNG MUNDUR MUNCUL
+                for (let word of sequence) {
+                    const textContainer = document.getElementById('text-container');
+                    textContainer.innerText = word;
+                    textContainer.style.animation = 'none';
+                    void textContainer.offsetWidth; // Refresh animasi
+                    textContainer.style.animation = 'popIn 0.6s ease forwards';
+                    await sleep(1200); // Jeda per kata 1.2 detik
+                }
+
+                // Hapus matrix dan teks
+                clearInterval(matrixInterval);
+                document.getElementById('matrix').style.display = 'none';
+                document.getElementById('text-container').style.display = 'none';
+
+                // 3. MUNCULKAN 2 FOTO AWAL
+                document.getElementById('photo-section').style.display = 'block';
+                buatBintang('photo-section');
+                await sleep(5000); // Layar ini tampil 5 detik
+                document.getElementById('photo-section').style.display = 'none';
+
+                // 4. ANIMASI LOVE MELINGKAR
+                document.getElementById('big-heart-section').style.display = 'block';
+                buatBintang('big-heart-section');
+                siapkanFotoLove(); // Taruh foto menumpuk di tengah
+                await sleep(200); // Jeda sangat singkat
+                sebarBentukLove(); // Tembakkan foto membentuk Love
+                await sleep(6000); // Nikmati bentuk love selama 6 detik
+                
+                // 5. PESAN PANJANG & PUDAR (FADE)
+                document.getElementById('big-heart-section').style.display = 'none';
+                const pesan = document.getElementById('long-message-section');
+                pesan.style.display = 'block';
+                document.body.style.backgroundColor = 'black'; // Latar jadi hitam polos
+                
+                // Muncul pelan-pelan (Fade In)
+                await sleep(100); 
+                pesan.style.opacity = '1';
+                
+                // Tahan pesan selama 30 DETIK (30000 ms) sesuai permintaanmu
+                await sleep(30000); 
+
+                // Menghilang pelan-pelan (Fade Out)
+                pesan.style.opacity = '0';
+                await sleep(2000); // Tunggu proses menghilang selesai sebelum loop ulang
+            }
+        }
+
+        // --- KUMPULAN FUNGSI ANIMASI ---
+
+        function mulaiMatrix() {
+            const canvas = document.getElementById('matrix');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            const fontSize = 16; const columns = canvas.width / fontSize;
+            const drops = Array(Math.floor(columns)).fill(1);
+
+            if(matrixInterval) clearInterval(matrixInterval);
+            matrixInterval = setInterval(() => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff69b4'; ctx.font = fontSize + 'px monospace';
+                for (let i = 0; i < drops.length; i++) {
+                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+            }, 33);
+        }
+
+        function buatBintang(wadahId) {
+            const wadah = document.getElementById(wadahId);
+            wadah.querySelectorAll('.star').forEach(e => e.remove()); // Bersihkan bintang lama
+            for (let i = 0; i < 70; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + 'vw';
+                star.style.top = Math.random() * 100 + 'vh';
+                star.style.opacity = Math.random();
+                wadah.appendChild(star);
+            }
+        }
+
+        function siapkanFotoLove() {
+            const wadah = document.getElementById('big-heart-section');
+            wadah.querySelectorAll('.heart-pic').forEach(e => e.remove());
+            const jumlahFoto = 36; // Banyaknya foto penyusun bentuk love
+            for(let i = 0; i < jumlahFoto; i++) {
+                const img = document.createElement('img');
+                img.src = i % 2 === 0 ? 'foto1.jpg' : 'foto2.jpg'; // Selang-seling foto 1 & 2
+                img.className = 'heart-pic';
+                img.style.left = '50%'; // Semua mulai dari tengah
+                img.style.top = '50%';
+                img.style.transform = 'translate(-50%, -50%) scale(0)';
+                wadah.appendChild(img);
+            }
+        }
+
+        function sebarBentukLove() {
+            const fotoFoto = document.querySelectorAll('.heart-pic');
+            const total = fotoFoto.length;
+            // Skala ukuran love agar muat di HP (vmin)
+            const skala = window.innerWidth < 600 ? 2.3 : 3.5; 
+
+            fotoFoto.forEach((foto, i) => {
+                // Rumus matematika bentuk Love (Jantung Hati)
+                const t = (i / total) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+
+                // Beri efek jeda sedikit (delay) agar bergeraknya keren seperti air mancur
+                setTimeout(() => {
+                    // Pindah ke posisi kordinat (x, y) rumus love
+                    foto.style.transform = `translate(calc(-50% + ${x * skala}vmin), calc(-50% + ${y * skala}vmin)) scale(1)`;
+                }, i * 40); 
+            });
+        }
+    </script>
+</body>
+</html>
